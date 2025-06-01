@@ -32,75 +32,68 @@ jobs:
         run: mvn clean package -DskipTests
 
       - name: Start Test Database
-        uses: docker/setup-buildx-action@v2
-
-      - name: Run MySQL Container
         run: |
           docker run --name test-mysql -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=test_db -e MYSQL_USER=test_user -e MYSQL_PASSWORD=test_password -p 3306:3306 -d mysql:latest
           sleep 30 # Wait for MySQL to initialize
 
-      - name: Run Teststabase Connection
+      - name: Verify Database Connection
+        run: |
+          docker exec test-mysql mysql -u test_user -ptest_password -e "SHOW DATABASES;"
+          echo "Database connection verified."
+
+      - name: Run Tests
         working-directory: src/main/java/demo
-        env:cker exec test-mysql mysql -u test_user -ptest_password -e "SHOW DATABASES;"
-          DB_HOST: ${{ secrets.DB_HOST }}ied."
-          DB_PORT: ${{ secrets.DB_PORT }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_USERNAME: ${{ secrets.DB_USERNAME }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_HOST: ${{ secrets.DB_HOST }}
-          DB_PORT: ${{ secrets.DB_PORT }}
-          DB_NAME: ${{ secrets.DB_NAME }}ame: Cleanup Docker Containers
-          DB_USERNAME: ${{ secrets.DB_USERNAME }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }} stop test-mysql
-        run: mvn testdocker rm test-mysql
+        env:
+          DB_HOST: localhost
+          DB_PORT: 3306
+          DB_NAME: test_db
+          DB_USERNAME: test_user
+          DB_PASSWORD: test_password
+        run: mvn test
+
+      - name: Cleanup Docker Containers
+        run: |
+          docker stop test-mysql
+          docker rm test-mysql
 
   deploy:
-    runs-on: ubuntu-latest    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest
     needs: build
     steps:
-      - name: Checkout Code      - name: Checkout Code
+      - name: Checkout Code
         uses: actions/checkout@v3
 
       - name: Install Dependencies
-        run: sudo apt-get update && sudo apt-get install -y unzip curlstall -y unzip curl
+        run: sudo apt-get update && sudo apt-get install -y unzip curl
 
-      - name: Install or Update AWS CLIWS CLI
+      - name: Install or Update AWS CLI
         run: |
-          if ! command -v aws >/dev/null; then command -v aws >/dev/null; then
-            echo "AWS CLI not found. Installing..."ng..."
+          if ! command -v aws >/dev/null; then
+            echo "AWS CLI not found. Installing..."
             curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
             unzip -o awscliv2.zip
             sudo ./aws/install
-          elsese
-            echo "AWS CLI found. Updating..."            echo "AWS CLI found. Updating..."
-            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-            unzip -o awscliv2.zipunzip -o awscliv2.zip
+          else
+            echo "AWS CLI found. Updating..."
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip -o awscliv2.zip
             sudo ./aws/install --update
           fi
 
-      - name: Wait for Environment to be ReadyWait for Environment to be Ready
+      - name: Wait for Environment to be Ready
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: us-east-1
-        run: |
-          export AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
-          export AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}rt AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          export AWS_REGION=us-east-1          export AWS_REGION=us-east-1
-          until [ "$(aws elasticbeanstalk describe-environments --environment-names my-env-name --query 'Environments[0].Status' --output text)" = "Ready" ]; docribe-environments --environment-names my-env-name --query 'Environments[0].Status' --output text)" = "Ready" ]; do
-            echo "Waiting for environment to be ready..."echo "Waiting for environment to be ready..."
-            sleep 30
-          done
-
-      - name: Deploy to AWS Elastic BeanstalkDeploy to AWS Elastic Beanstalk
-        env:
-
-
-
-
-
-          eb deploy my-env-name        run: |          AWS_REGION: us-east-1          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: us-east-1
         run: |
-          eb deploy my-env-name
+          until [ "$(aws elasticbeanstalk describe-environments --environment-names my-env-name --query 'Environments[0].Status' --output text)" = "Ready" ]; do
+            echo "Waiting for environment to be ready..."
+            sleep 30
+          done
+
+      - name: Deploy to AWS Elastic Beanstalk
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: us-east-1
+        run: eb deploy my-env-name
