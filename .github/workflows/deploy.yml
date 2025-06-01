@@ -18,12 +18,27 @@ jobs:
           java-version: 17
           distribution: temurin
 
+      - name: Set Environment Variables
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: echo "Environment variables set."
+
       - name: Build with Maven
         working-directory: src/main/java/demo
         run: mvn clean package -DskipTests
 
       - name: Run Tests
         working-directory: src/main/java/demo
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: mvn test
 
   deploy:
