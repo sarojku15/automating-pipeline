@@ -24,7 +24,7 @@ jobs:
 
       - name: Run Tests
         working-directory: src/main/java/demo
-        run: mvn test || echo "Tests failed but continuing..."
+        run: mvn test
 
   deploy:
     runs-on: ubuntu-latest
