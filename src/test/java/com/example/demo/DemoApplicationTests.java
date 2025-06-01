@@ -10,6 +10,7 @@ class DemoApplicationTests {
 
     @Test
     void contextLoads() {
+        System.out.println("Testing database connection...");
         // Ensure this test passes by fixing any configuration issues.
     }
 }
