@@ -19,11 +19,11 @@ jobs:
           distribution: temurin
 
       - name: Build with Maven
-        working-directory: src/main/java/demo
+        working-directory: .
         run: mvn clean package -DskipTests
 
       - name: Run Tests
-        working-directory: src/main/java/demo
+        working-directory: .
         run: mvn test || echo "Tests failed but continuing..."
 
   deploy:
