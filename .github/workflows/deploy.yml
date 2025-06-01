@@ -74,3 +74,4 @@ jobs:
           export AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
           export AWS_REGION=us-east-1
           eb deploy my-env-name
+#test
